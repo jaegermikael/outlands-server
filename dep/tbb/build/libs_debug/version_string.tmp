@@ -1,0 +1,11 @@
+#define __TBB_VERSION_STRINGS \
+"TBB: BUILD_HOST\t\tlocalhost (i686)" ENDL \
+"TBB: BUILD_OS\t\tFuntoo Linux - baselayout 2.1.9" ENDL \
+"TBB: BUILD_KERNEL\tLinux 3.3.7-zen+ #25 ZEN SMP PREEMPT Tue May 22 17:54:02 CEST 2012" ENDL \
+"TBB: BUILD_GCC\t\tConfigured with: /var/tmp/portage/sys-devel/gcc-4.6.2-r1/work/gcc-4.6.2/configure --prefix=/usr --bindir=/usr/i686-pc-linux-gnu/gcc-bin/4.6.2 --includedir=/usr/lib/gcc/i686-pc-linux-gnu/4.6.2/include --datadir=/usr/share/gcc-data/i686-pc-linux-gnu/4.6.2 --mandir=/usr/share/gcc-data/i686-pc-linux-gnu/4.6.2/man --infodir=/usr/share/gcc-data/i686-pc-linux-gnu/4.6.2/info --with-gxx-include-dir=/usr/lib/gcc/i686-pc-linux-gnu/4.6.2/include/g++-v4 --host=i686-pc-linux-gnu --build=i686-pc-linux-gnu --disable-altivec --disable-fixed-point --without-ppl --without-cloog --enable-lto --disable-nls --with-system-zlib --disable-werror --enable-secureplt --disable-multilib --enable-libmudflap --disable-libssp --enable-libgomp --with-python-dir=/share/gcc-data/i686-pc-linux-gnu/4.6.2/python --enable-checking=release --disable-libgcj --disable-libquadmath --with-arch=i686 --enable-languages=c,c++ --enable-shared --enable-threads=posix --enable-__cxa_atexit --enable-clocale=gnu --enable-targets=all --with-bugurl=http://bugs.gentoo.org/ --with-pkgversion='Gentoo 4.6.2-r1 p1.4, pie-0.5.0' gcc version 4.6.2 (Gentoo 4.6.2-r1 p1.4, pie-0.5.0) " ENDL \
+"TBB: BUILD_GLIBC\t2.13" ENDL \
+"TBB: BUILD_LD\t\t" ENDL \
+"TBB: BUILD_TARGET\tia32 on cc4.6.2_libc2.13_kernel3.3.7" ENDL \
+"TBB: BUILD_COMMAND\tg++ -DTBB_USE_DEBUG -DDO_ITT_NOTIFY -g -O0 -DUSE_PTHREAD -m32 -fPIC -D__TBB_BUILD=1 -Wall -Wno-parentheses -march=native -O2 -pipe -fomit-frame-pointer -pipe -I../../src -I../../src/rml/include -I../../include" ENDL \
+
+#define __TBB_DATETIME "Tue May 22 18:58:00 UTC 2012"
