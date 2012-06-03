@@ -3997,6 +3997,7 @@ void Spell::CastPreCastSpells(Unit* target)
 
 SpellCastResult Spell::CheckCast(bool strict)
 {
+	
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
     if (m_caster->GetTypeId()==TYPEID_PLAYER && !m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) &&
         ((Player*)m_caster)->HasSpellCooldown(m_spellInfo->Id))
@@ -4069,7 +4070,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             // warrior not have real combo-points at client side but use this way for mark allow Overpower use
             return m_caster->getClass() == CLASS_WARRIOR ? SPELL_FAILED_CASTER_AURASTATE : SPELL_FAILED_NO_COMBO_POINTS;
     }
-
+    
     if(Unit *target = m_targets.getUnitTarget())
     {
         // target state requirements (not allowed state), apply to self also
@@ -4244,7 +4245,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 return SPELL_FAILED_NOT_BEHIND;
             }
         }
-
+        
         //Target must be facing you.
         if ((m_spellInfo->Attributes == (SPELL_ATTR_UNK4 | SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_UNK18 | SPELL_ATTR_STOP_ATTACK_TARGET)) && !target->HasInArc(M_PI_F, m_caster))
         {
@@ -4519,6 +4520,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if(m_targets.getUnitTarget()->GetHealth() > m_targets.getUnitTarget()->GetMaxHealth()*0.2)
                         return SPELL_FAILED_BAD_TARGETS;
                 }
+
                 break;
             }
             case SPELL_EFFECT_TAMECREATURE:
@@ -4651,11 +4653,19 @@ SpellCastResult Spell::CheckCast(bool strict)
             case SPELL_EFFECT_POWER_BURN:
             case SPELL_EFFECT_POWER_DRAIN:
             {
+				Unit* target = m_targets.getUnitTarget();
+				
                 // Can be area effect, Check only for players and not check if target - caster (spell can have multiply drain/burn effects)
                 if (m_caster->GetTypeId() == TYPEID_PLAYER)
-                    if (Unit* target = m_targets.getUnitTarget())
-                        if (target != m_caster && int32(target->getPowerType()) != m_spellInfo->EffectMiscValue[i])
+					if (target != m_caster && int32(target->getPowerType()) != m_spellInfo->EffectMiscValue[i])
                             return SPELL_FAILED_BAD_TARGETS;
+                    
+				// This is not really the right way of doing it, but getPowerType is not working correctly for mobs
+				// The side effect of this implementation is that you cannot Mana Tap creatures with 0 mana
+                if (target->GetTypeId() != TYPEID_PLAYER)
+					if(!target->GetPower(POWER_MANA))
+						return SPELL_FAILED_BAD_TARGETS;
+				
                 break;
             }
             case SPELL_EFFECT_CHARGE:
