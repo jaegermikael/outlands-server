@@ -308,6 +308,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
 {
     if( unitTarget && unitTarget->isAlive())
     {
+		
         switch(m_spellInfo->SpellFamilyName)
         {
             case SPELLFAMILY_GENERIC:
@@ -2506,14 +2507,20 @@ void Spell::EffectPowerDrain(SpellEffectIndex eff_idx)
         float manaMultiplier = m_spellInfo->EffectMultipleValue[eff_idx];
         if(manaMultiplier==0)
             manaMultiplier = 1;
-
+        
         if(Player *modOwner = m_caster->GetSpellModOwner())
             modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_MULTIPLE_VALUE, manaMultiplier);
 
         int32 gain = int32(new_damage * manaMultiplier);
 
-        m_caster->EnergizeBySpell(m_caster, m_spellInfo->Id, gain, POWER_MANA);
+
+		// Don't restore from Mana Tap (as it comes from Arcane Torrent)
+		if(m_spellInfo->Id != 28734)
+		{
+			m_caster->EnergizeBySpell(m_caster, m_spellInfo->Id, gain, POWER_MANA);
+		}
     }
+    
 }
 
 void Spell::EffectSendEvent(SpellEffectIndex effectIndex)
