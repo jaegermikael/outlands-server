@@ -5849,8 +5849,8 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
 		dx = cx;
         dy = cy;
         
-        // Try 0.5f at a time
-        for(float i=0.5f; i<dis; i+=0.5f)
+        // Try 0.4f at a time
+        for(float i=0.4f; i<dis; i+=0.4f)
         {
             dx += _dx;
             dy += _dy;
@@ -5864,7 +5864,7 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
             // cz = dz;
             
             //Prevent climbing and go around object maybe 2.0f is to small? use 3.0f?
-            if( (dz-cz) < 0.58f && (dz-cz) > -0.58f && (unitTarget->IsWithinLOS(dx, dy, dz)))
+            if( (dz-cz) < 0.41f && (dz-cz) > -0.41f && (unitTarget->IsWithinLOS(dx, dy, dz)))
             {
                 //No climb, the z differenze between this and prev step is ok. Store this destination for future use or check.
                 cx = dx;
