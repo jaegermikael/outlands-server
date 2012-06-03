@@ -4325,6 +4325,18 @@ void Unit::RemoveAura(Aura *Aur, AuraRemoveMode mode)
         m_deletedAuras.push_back(Aur);
     else
         delete Aur;
+    
+    SpellEntry const* spellEntry = Aur->GetHolder()->GetSpellProto();    
+    switch(spellEntry->Id) 
+    {
+        // Stoneform also immunizes other types not included in the dbc so remove them
+        case 20594:
+        {
+            ApplySpellImmune(spellEntry->Id, IMMUNITY_MECHANIC, MECHANIC_BLEED, false);
+            ApplySpellImmune(spellEntry->Id, IMMUNITY_DISPEL, DispelType(3), false);
+            break;
+        }
+    }
 }
 
 void Unit::RemoveAllAuras(AuraRemoveMode mode /*= AURA_REMOVE_BY_DEFAULT*/)

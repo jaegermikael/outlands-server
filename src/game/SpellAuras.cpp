@@ -4264,7 +4264,39 @@ void Aura::HandleAuraModDispelImmunity(bool apply, bool Real)
     if(!Real)
         return;
 
-    GetTarget()->ApplySpellDispelImmunity(GetSpellProto(), DispelType(m_modifier.m_miscvalue), apply);
+    SpellEntry const* spellEntry = GetSpellProto();
+    
+    switch(spellEntry->Id) 
+    {
+	// Stoneform also dispells other types not included in the dbc
+	case 20594:
+        {
+            GetTarget()->ApplySpellDispelImmunity(GetSpellProto(), DispelType(m_modifier.m_miscvalue), apply);
+            GetTarget()->ApplySpellDispelImmunity(GetSpellProto(), DispelType(3), apply);
+        
+            Unit::AuraList const& PeriodicDamage = GetTarget()->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
+            for(Unit::AuraList::const_iterator i = PeriodicDamage.begin(); i != PeriodicDamage.end(); ++i)
+            if( (*i)->GetSpellProto()->Mechanic == MECHANIC_BLEED)
+            {
+                // Know of no other way to dispel bleeds
+                //m_modifier.m_miscvalue = MECHANIC_BLEED;
+               //HandleModMechanicImmunityMask(true, true);
+                //GetTarget()->RemoveAurasAtMechanicImmunity(MECHANIC_BLEED, spellEntry->Id);
+                if (PeriodicDamage.front() != this)                   // skip itself aura (it already added)
+                {
+                    GetTarget()->RemoveAurasDueToSpell(PeriodicDamage.front()->GetId());
+                    i = PeriodicDamage.begin();
+                }
+                else
+                    ++i;
+                }
+            }
+	    break;
+	default:
+	    GetTarget()->ApplySpellDispelImmunity(GetSpellProto(), DispelType(m_modifier.m_miscvalue), apply);
+	    break;
+    }
+
 }
 
 void Aura::HandleAuraProcTriggerSpell(bool apply, bool Real)
@@ -4636,6 +4668,18 @@ void Aura::HandleModResistancePercent(bool apply, bool /*Real*/)
                 target->ApplyResistanceBuffModsPercentMod(SpellSchools(i), true, float(m_modifier.m_amount), apply);
                 target->ApplyResistanceBuffModsPercentMod(SpellSchools(i), false, float(m_modifier.m_amount), apply);
             }
+        }
+    }
+
+    SpellEntry const* spellEntry = GetSpellProto();    
+    switch(spellEntry->Id) 
+    {
+        // Stoneform also immunizes other types not included in the dbc
+        case 20594:
+        {
+            target->ApplySpellImmune(spellEntry->Id, IMMUNITY_MECHANIC, MECHANIC_BLEED, true);
+            target->ApplySpellImmune(spellEntry->Id, IMMUNITY_DISPEL, DispelType(3), true);
+            break;
         }
     }
 }
