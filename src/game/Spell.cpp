@@ -4665,7 +4665,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (target->GetTypeId() != TYPEID_PLAYER)
 					if(!target->GetPower(POWER_MANA))
 						return SPELL_FAILED_BAD_TARGETS;
-				
+			
                 break;
             }
             case SPELL_EFFECT_CHARGE:
@@ -4984,6 +4984,11 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 if(m_targets.getUnitTarget()->getPowerType() != POWER_MANA)
                     return SPELL_FAILED_BAD_TARGETS;
+    
+				// This is not really the right way of doing it, but getPowerType is not working correctly for mobs
+				// The side effect of this implementation is that you cannot Drain Mana creatures with 0 mana (but has a mana bar)
+                if (m_targets.getUnitTarget()->GetTypeId() != TYPEID_PLAYER && !m_targets.getUnitTarget()->GetPower(POWER_MANA))
+					return SPELL_FAILED_BAD_TARGETS;
 
                 break;
             }
