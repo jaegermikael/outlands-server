@@ -5817,9 +5817,7 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
         
         // Keep trying until we reach maximum distance
         for(float i = steppingDistance; i < teleportDistance; i += steppingDistance)
-        {
-            DEBUG_LOG("TELEPORT: stepping: %f", i);
-            
+        {            
             distantX += steppingX;
             distantY += steppingY;
         
@@ -5829,23 +5827,18 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
            
             // Get the height of our current position (in case of obstacles)
             distantZ = m_caster->GetTerrain()->GetHeight(distantX, distantY, currentZ, true);
-            
-            DEBUG_LOG("TELEPORT: distantZ: %f (isInWater: %i)", distantZ, m_caster->GetTerrain()->IsInWater(distantX, distantY, distantZ));
-            DEBUG_LOG("TELEPORT: is flying (%f - %f < 8) ? %i", currentZ, distantZ, currentZ - distantZ < 8.0f);
-            
+                        
             if(!m_caster->GetTerrain()->IsInWater(distantX, distantY, distantZ))
             {
-                // Prevent too steep climbing
+                // Prevent too steep climbing (except while we're in air where 12.0f seems to be a good number)
                 if(((distantZ - currentZ < maximumAngle && distantZ - currentZ > maximumAngle * -1) || (currentZ - distantZ < 12.0f)) && unitTarget->IsWithinLOS(distantX, distantY, distantZ))
                 {
-                    DEBUG_LOG("TELEPORT: good location: X: %f Y: %f Z: %f", distantX, distantY, distantZ);
                     currentX = distantX;
                     currentY = distantY;
                     currentZ = distantZ;
                 }
                 else
                 {
-                    DEBUG_LOG("TELEPORT: bad location - halting");
                     break;
                 }
             }
@@ -5854,33 +5847,26 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
                 // Prevent too steep climbing (and don't dive if we're under water)
                 if(unitTarget->IsWithinLOS(distantX, distantY, distantZ) && distantZ >= startZ)
                 {
-                    DEBUG_LOG("TELEPORT: we're climbing in water and in LOS at X: %f Y: %f Z: %f", distantX, distantY, currentZ);
                     currentX = distantX;
                     currentY = distantY;
                     currentZ = distantZ;
                 }
                 else if(unitTarget->IsWithinLOS(distantX, distantY, distantZ))
                 {
-                    DEBUG_LOG("TELEPORT: we're in water and in LOS at X: %f Y: %f Z: %f", distantX, distantY, currentZ);
                     currentX = distantX;
                     currentY = distantY;
                 }
                 else
                 {
-                    DEBUG_LOG("TELEPORT: we're in water and out of LOS at X: %f Y: %f Z: %f", distantX, distantY, currentZ);
                     break;
                 }
             }
         }
-        
-        DEBUG_LOG("TELEPORT: ported from %f, %f, %f", startX, startY, startZ);
-
+ 
 		if(unitTarget->GetTypeId() == TYPEID_PLAYER)
 		{
 			((Player*)unitTarget)->TeleportTo(m_caster->GetMapId(), currentX, currentY, currentZ, angle, TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET | (unitTarget==m_caster ? TELE_TO_SPELL : 0));
 		}
-
-        DEBUG_LOG("TELEPORT: ported to  %f, %f, %f", currentX, currentY, currentZ);
     }
 }
 
