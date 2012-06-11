@@ -5786,135 +5786,102 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
 
     if( m_spellInfo->rangeIndex == 1)                       //self range
     {
-        int32 mapid = m_caster->GetMapId();
-    
-        // ported from trinitycore (zlatko0o)
-        float dis = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
+        // Distance to leap forward
+        float teleportDistance = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
 
-        float startx,starty,startz;
-        float cx,cy,cz;
-        float dx,dy,dz;
+        // Store our positions
+        float startX, startY, startZ;
+        float distantX, distantY, distantZ;
+        float currentX, currentY, currentZ;
+        
+        unitTarget->GetPosition(startX, startY, startZ);
+        unitTarget->GetPosition(currentX, currentY, currentZ);
+        
+        // Angle we're looking at
         float angle = unitTarget->GetOrientation();
-        unitTarget->GetPosition(startx,starty,startz);
-        unitTarget->GetPosition(cx,cy,cz);
         
-        bool useVmap = false;
-        bool swapZone = true;
-        if( m_caster->GetTerrain()->GetHeight(cx, cy, cz, true) <  m_caster->GetTerrain()->GetHeight(cx, cy, cz, true) )
-            useVmap = true;
-            
-        const int itr = int(dis/0.5f);
-        const float _dx = 0.5f * cos(angle);
-        const float _dy = 0.5f * sin(angle);
+        // Stepping
+        const float steppingDistance = 0.2f;
+        const float steppingX = steppingDistance * cos(angle);
+        const float steppingY = steppingDistance * sin(angle);
         
-        float dxw = cx;
-        float dyw = cy;
+        float maximumAngle = 0.49f;
         
-		MaNGOS::NormalizeMapCoord(dxw);
-		MaNGOS::NormalizeMapCoord(dyw);
-
-		// We're swimming. Really ugly code which should be just temporary. //
-        if(m_caster->IsInWater()) {
-			
-			for(float i=0.5f; i<dis; i+=0.5f)
-			{
-				dxw += _dx;
-				dyw += _dy;
-		
-				if(m_caster->GetTerrain()->IsInWater(dxw, dyw, cz) && (unitTarget->IsWithinLOS(dxw, dyw, cz))) {
-					cx = dxw;
-					cy = dyw;
-				}
-				else
-				{
-					// We cant back up to much in case there is a cliff behind us
-					// I guess the LOS is not really working as it should
-					cx -= 4.6f * cos(angle);
-					cy -= 4.6f * sin(angle);
-
-					break;
-				}
-			}
-			
-			DEBUG_LOG("TELEPORT: destination is under water: %i", m_caster->GetTerrain()->IsInWater(cx, cy, cz));
-	
-			((Player*)unitTarget)->TeleportTo(mapid, cx, cy, cz, unitTarget->GetOrientation(), TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET | (unitTarget==m_caster ? TELE_TO_SPELL : 0));
-			return;
-		}
-		
-		// The regular land blink
-		// TODO: add GetTerrain()->IsInWater-check to see if we're teleporting into water
-		// if so we should not follow the ground and instead go for the water surface
-		
-		dx = cx;
-        dy = cy;
+        // Start checking from player position
+		distantX = currentX;
+        distantY = currentY;
         
-        // Try 0.4f at a time
-        for(float i=0.4f; i<dis; i+=0.4f)
+        // Normalize map coordinates
+		MaNGOS::NormalizeMapCoord(distantX);
+		MaNGOS::NormalizeMapCoord(distantY);
+        
+        // Keep trying until we reach maximum distance
+        for(float i = steppingDistance; i < teleportDistance; i += steppingDistance)
         {
-            dx += _dx;
-            dy += _dy;
-            MaNGOS::NormalizeMapCoord(dx);
-            MaNGOS::NormalizeMapCoord(dy);
+            DEBUG_LOG("TELEPORT: stepping: %f", i);
+            
+            distantX += steppingX;
+            distantY += steppingY;
+        
+            // Normalize our new cords
+            MaNGOS::NormalizeMapCoord(distantX);
+            MaNGOS::NormalizeMapCoord(distantY);
            
-            dz = m_caster->GetTerrain()->GetHeight(dx, dy, cz, true);
+            // Get the height of our current position (in case of obstacles)
+            distantZ = m_caster->GetTerrain()->GetHeight(distantX, distantY, currentZ, true);
             
-            // test mid-air blink
-            //if(abs(cz - dz) >= 8.0f)
-            // cz = dz;
+            DEBUG_LOG("TELEPORT: distantZ: %f (isInWater: %i)", distantZ, m_caster->GetTerrain()->IsInWater(distantX, distantY, distantZ));
+            DEBUG_LOG("TELEPORT: is flying (%f - %f < 8) ? %i", currentZ, distantZ, currentZ - distantZ < 8.0f);
             
-            //Prevent climbing and go around object maybe 2.0f is to small? use 3.0f?
-            if( (dz-cz) < 0.41f && (dz-cz) > -0.41f && (unitTarget->IsWithinLOS(dx, dy, dz)))
+            if(!m_caster->GetTerrain()->IsInWater(distantX, distantY, distantZ))
             {
-                //No climb, the z differenze between this and prev step is ok. Store this destination for future use or check.
-                cx = dx;
-                cy = dy;
-				cz = dz;
-			}
-            else
-            {
-                //Something wrong with los or z differenze... maybe we are going from outer world inside a building or viceversa
-                if(swapZone)
+                // Prevent too steep climbing
+                if(((distantZ - currentZ < maximumAngle && distantZ - currentZ > maximumAngle * -1) || (currentZ - distantZ < 12.0f)) && unitTarget->IsWithinLOS(distantX, distantY, distantZ))
                 {
-                    //so... change use of vamp and go back 1 step backward and recheck again.
-                    swapZone = false;
-                    //useVmap = !useVmap;
-                    --i;
-                    dx -= _dx;
-                    dy -= _dy;
+                    DEBUG_LOG("TELEPORT: good location: X: %f Y: %f Z: %f", distantX, distantY, distantZ);
+                    currentX = distantX;
+                    currentY = distantY;
+                    currentZ = distantZ;
                 }
                 else
                 {
-                    //bad recheck result... so break this and use last good coord for teleport player...
-                    dz += 0.2f;
+                    DEBUG_LOG("TELEPORT: bad location - halting");
                     break;
                 }
             }
-            // In case we should have a total limit on the z-axis, but not too sure if this is vanilla so lets skip it
-            //DEBUG_LOG("TELEPORT: too steep already? startz-z: %f", startz-cz);
-            //if ( (startz-cz) < -6.0f || (startz-cz) > 6.0f)
-            //{
-			//	DEBUG_LOG("TELEPORT: Too steep!");
-			//	break;
-			//}
-
+            else
+            {
+                // Prevent too steep climbing (and don't dive if we're under water)
+                if(unitTarget->IsWithinLOS(distantX, distantY, distantZ) && distantZ >= startZ)
+                {
+                    DEBUG_LOG("TELEPORT: we're climbing in water and in LOS at X: %f Y: %f Z: %f", distantX, distantY, currentZ);
+                    currentX = distantX;
+                    currentY = distantY;
+                    currentZ = distantZ;
+                }
+                else if(unitTarget->IsWithinLOS(distantX, distantY, distantZ))
+                {
+                    DEBUG_LOG("TELEPORT: we're in water and in LOS at X: %f Y: %f Z: %f", distantX, distantY, currentZ);
+                    currentX = distantX;
+                    currentY = distantY;
+                }
+                else
+                {
+                    DEBUG_LOG("TELEPORT: we're in water and out of LOS at X: %f Y: %f Z: %f", distantX, distantY, currentZ);
+                    break;
+                }
+            }
         }
         
-        DEBUG_LOG("TELEPORT: ported from %f, %f, %f", startx, starty, startz);
-
-		unitTarget->UpdateGroundPositionZ(cx, cy, cz);
+        DEBUG_LOG("TELEPORT: ported from %f, %f, %f", startX, startY, startZ);
 
 		if(unitTarget->GetTypeId() == TYPEID_PLAYER)
 		{
-			((Player*)unitTarget)->TeleportTo(mapid, cx, cy, cz, unitTarget->GetOrientation(), TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET | (unitTarget==m_caster ? TELE_TO_SPELL : 0));
+			((Player*)unitTarget)->TeleportTo(m_caster->GetMapId(), currentX, currentY, currentZ, angle, TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET | (unitTarget==m_caster ? TELE_TO_SPELL : 0));
 		}
 
-        DEBUG_LOG("TELEPORT: ported to  %f, %f, %f", cx, cy, cz);
-
-
+        DEBUG_LOG("TELEPORT: ported to  %f, %f, %f", currentX, currentY, currentZ);
     }
-    
-
 }
 
 void Spell::EffectLeapBack(SpellEffectIndex eff_idx)
