@@ -5805,7 +5805,7 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
         const float steppingX = steppingDistance * cos(angle);
         const float steppingY = steppingDistance * sin(angle);
         
-        float maximumAngle = 0.49f;
+        float maximumAngle = 0.21f;
         
         // Start checking from player position
 		distantX = currentX;
@@ -5831,7 +5831,9 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
             if(!m_caster->GetTerrain()->IsInWater(distantX, distantY, distantZ))
             {
                 // Prevent too steep climbing (except while we're in air where 12.0f seems to be a good number)
-                if(((distantZ - currentZ < maximumAngle && distantZ - currentZ > maximumAngle * -1) || (currentZ - distantZ < 12.0f)) && unitTarget->IsWithinLOS(distantX, distantY, distantZ))
+                if(	((distantZ - currentZ < maximumAngle && distantZ - currentZ > maximumAngle * -1) ||
+                    ((m_caster->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING))) && (currentZ - distantZ < 12.0f)) &&
+                    unitTarget->IsWithinLOS(distantX, distantY, distantZ)))
                 {
                     currentX = distantX;
                     currentY = distantY;
