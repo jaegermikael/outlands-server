@@ -1022,6 +1022,7 @@ void CreatureEventAI::EnterCombat(Unit *enemy)
                 case EVENT_T_AGGRO:
                     (*i).Enabled = true;
                     ProcessEvent(*i, enemy);
+                    AttackStart(enemy);
                     break;
                     //Reset all in combat timers
                 case EVENT_T_TIMER:
